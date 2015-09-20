@@ -13,7 +13,7 @@ print "python version: ", sys.version[0:5]
 print "numpy version: ", np.__version__
 # (HYDRA) 1.9.1
 
-def load_nii_subject(subject):
+def load_nii_subject(subject, dtype=None):
     template = 'rfMRI_REST?_??_Atlas_hp2000_clean.dtseries.nii'
     # template = ('%s/MNINonLinear/Results/rfMRI_REST?_??/rfMRI_REST?_??_Atlas_hp2000_clean.dtseries.nii' % subject)
     files = [val for val in sorted(glob(os.path.join(subject, template)))]
@@ -23,7 +23,6 @@ def load_nii_subject(subject):
     # for left hemisphere; 'range(0,nsamples)' for all ??
     # data_range = range(0,32492) ??
 
-    tmp_t_series = []
     for x in xrange(0, 4):
 
         img = nb.load(filename[x])
@@ -39,13 +38,20 @@ def load_nii_subject(subject):
         mean_series = single_t_series.mean(axis=0)
         std_series = single_t_series.std(axis=0)
 
-        tmp_t_series.extend(((single_t_series - mean_series) / std_series).T)
+        if x == 0:
+            # In first loop we initialize matrix K to be filled up and returned.
+            n = single_t_series.shape[0]
+            m_single = single_t_series.shape[1]
+            # By default we are using the same dtype like input file (float32).
+            init_dtype = single_t_series.dtype if dtype == None else dtype
+            K = np.ndarray(shape=[n,4*m_single], dtype=init_dtype, order='F')
+
+        K[:, x*m_single:(x+1)*m_single] = (
+            (single_t_series - mean_series) / std_series)
 
         del img
         del single_t_series
 
-    K = np.array(tmp_t_series).T
-    del tmp_t_series
     return K
 
 def load_random_subject(n,m):
