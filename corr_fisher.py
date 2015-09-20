@@ -23,9 +23,8 @@ print "numpy version: ", np.__version__
 
 def load_nii_subject(subject, dtype=None):
     template = 'rfMRI_REST?_??_Atlas_hp2000_clean.dtseries.nii'
-    # template = ('%s/MNINonLinear/Results/rfMRI_REST?_??/rfMRI_REST?_??_Atlas_hp2000_clean.dtseries.nii' % subject)
     files = [val for val in sorted(glob(os.path.join(subject, template)))]
-    filename = files[:4]
+    files = files[:4]
 
     # read in data and create correlation matrix:
     # for left hemisphere; 'range(0,nsamples)' for all ??
@@ -33,7 +32,7 @@ def load_nii_subject(subject, dtype=None):
 
     for x in xrange(0, 4):
 
-        img = nb.load(filename[x])
+        img = nb.load(files[x])
         # ntimepoints, nsamples = img.data.shape
 
         # the following should be a concatenation of all 4 scans from each subject:
@@ -76,7 +75,7 @@ def load_random_subject(n,m):
 
 def correlation_matrix(subject):
     K = load_nii_subject(subject)
-    #K = load_random_subject(4000,4800)
+    #K = load_random_subject(NN,4800)
     # K : matrix of similarities / Kernel matrix / Gram matrix
     K = np.corrcoef(K)
     return K
@@ -155,10 +154,6 @@ print "loop done, do fisher_z2r"
 SUM /= float(N)
 SUM = fisher_z2r(SUM)
 SUM = upper_to_mat(SUM)
-
-# Just testing ... the diagonal of the average correlation matrix should be 1.0
-di = np.diag_indices(SUM.shape[1])
-print np.allclose(SUM[di], 1.0)
 
 print "do embed"
 print "correlation matrix:", SUM.shape
