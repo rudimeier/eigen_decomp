@@ -8,6 +8,9 @@ import nibabel as nb
 import sys
 import math
 
+satra_path = sys.path.append('/u/sbayrak/devel/mapalign/mapalign')
+import embed
+
 print "python version: ", sys.version[0:5]
 # (HYDRA) 2.7.9
 print "numpy version: ", np.__version__
@@ -88,15 +91,31 @@ N = len(subject_list)
 
 for i in range(0, N):
     subject = subject_list[i]
+    print i, "do corr"
     K = correlation_matrix(subject)
+    print i, "do r2z"
+    K = fisher_r2z(K)
     if i == 0:
         SUM = np.zeros(K.shape,K.dtype)
-    SUM += fisher_r2z(K)
+    print i, "do sum"
+    SUM = SUM + K
     del K
 
+print "loop done, do fisher_z2r"
 SUM /= float(N)
 SUM = fisher_z2r(SUM)
 
 # Just testing ... the diagonal of the average correlation matrix should be 1.0
 di = np.diag_indices(SUM.shape[1])
 print np.allclose(SUM[di], 1.0)
+
+print "do embed"
+print "correlation matrix:", SUM.shape
+embedding, result = embed.compute_diffusion_map(SUM, alpha=0, n_components=20,
+    diffusion_time=0, skip_checks=True, overwrite=True)
+
+#save_output(subject, embedding)
+np.savetxt("out_test", embedding, fmt='%5.5e', delimiter='\t', newline='\n')
+
+print result['lambdas']
+
