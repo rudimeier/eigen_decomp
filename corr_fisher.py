@@ -11,6 +11,11 @@ import math
 satra_path = sys.path.append('/u/sbayrak/devel/mapalign/mapalign')
 import embed
 
+# global n, dimension of corr matrix , will be set when reading files ...
+NN = 0
+#NN = 11448 # fake this for testing: 8095...0.5 GB, 11448...1 GB, 16190...2 GB
+
+
 print "python version: ", sys.version[0:5]
 # (HYDRA) 2.7.9
 print "numpy version: ", np.__version__
@@ -36,6 +41,15 @@ def load_nii_subject(subject, dtype=None):
         # for only left hemisphere: brainModels[1]
 
         header = img.header.matrix.mims[1].brainModels[2].indexOffset
+
+        # set global n, sometimes it's difficult to know about it
+        global NN
+        if NN == 0:
+            NN = header
+        else:
+            # globally faked ... for testing
+            header = NN
+
         single_t_series = img.data[:, :header].T
 
         mean_series = single_t_series.mean(axis=0)
@@ -68,6 +82,9 @@ def correlation_matrix(subject):
     return K
 
 def fisher_r2z(R):
+    return np.arctanh(R)
+
+def old_fisher_r2z(R):
     # convert 1.0's into largest smaller value than 1.0
     di = np.diag_indices(R.shape[1])
     epsilon = np.finfo(float).eps
@@ -77,12 +94,41 @@ def fisher_r2z(R):
     return Z 
 
 def fisher_z2r(Z):
+    X=np.exp(2*Z)
+    return (X - 1) / (X + 1)
+
+def old_fisher_z2r(Z):
     # Fisher z to r transform
     R = (np.exp(2*Z) - 1)/(np.exp(2*Z) +1)
     # set diagonals back to 1.0
     di = np.diag_indices(R.shape[1])
     R[di] = 1.0
     return R
+
+def mat_to_upper(A):
+    n = A.shape[0]
+    size = (n - 1) * n / 2
+    U = np.ndarray(shape=[size,], dtype=A.dtype)
+    k = 0
+    for i in range(0, n-1):
+        len = n - 1 - i
+        U[k:k+len] = A[i,i+1:n]
+        k += len
+    return U
+
+def upper_to_mat(A):
+    n = NN
+    M = np.zeros(shape=[n,n], dtype=A.dtype)
+    k = 0
+    for i in range(0,n):
+        len = n - 1 - i
+        M[i,i+1:n] = A[k:k+len]
+        #M[i,0:i] = M[0:i,i]
+        k += len
+    M += M.T
+    di = np.diag_indices(n)
+    M[di] = 1.0
+    return M
 
 # here we go ...
 
@@ -92,7 +138,11 @@ N = len(subject_list)
 for i in range(0, N):
     subject = subject_list[i]
     print i, "do corr"
+    # this always returns dtype=np.float64, consider adding .astype(np.float32)
     K = correlation_matrix(subject)
+    # for the next calculations we only use the upper triangular matrix
+    K = mat_to_upper(K)
+
     print i, "do r2z"
     K = fisher_r2z(K)
     if i == 0:
@@ -104,6 +154,7 @@ for i in range(0, N):
 print "loop done, do fisher_z2r"
 SUM /= float(N)
 SUM = fisher_z2r(SUM)
+SUM = upper_to_mat(SUM)
 
 # Just testing ... the diagonal of the average correlation matrix should be 1.0
 di = np.diag_indices(SUM.shape[1])
