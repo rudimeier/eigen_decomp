@@ -11,7 +11,7 @@ import sys
 import math
 import time
 
-satra_path = sys.path.append('/u/sbayrak/devel/mapalign/mapalign')
+sys.path.append(os.path.expanduser('~/devel/mapalign/mapalign'))
 import embed
 
 # global n, dimension of corr matrix , will be set when reading files ...

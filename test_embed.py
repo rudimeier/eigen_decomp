@@ -11,7 +11,7 @@ print "aaaa scipy", scipy.__version__
 print "bbbb numpy", np.__version__
 print "ccccc sklearn", sklearn.__version__
 
-satra_path = sys.path.append('/u/sbayrak/devel/mapalign/mapalign')
+sys.path.append(os.path.expanduser('~/devel/mapalign/mapalign'))
 import embed 
 
 infile = sys.argv[1]
