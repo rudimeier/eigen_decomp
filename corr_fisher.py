@@ -122,11 +122,9 @@ def upper_to_mat(A):
     for i in range(0,n):
         len = n - 1 - i
         M[i,i+1:n] = A[k:k+len]
-        #M[i,0:i] = M[0:i,i]
+        M[i,i] = 1.0
+        M[i,0:i] = M[0:i,i]
         k += len
-    M += M.T
-    di = np.diag_indices(n)
-    M[di] = 1.0
     return M
 
 # here we go ...
