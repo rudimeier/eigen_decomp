@@ -7,6 +7,7 @@ import numpy as np
 import nibabel as nb
 import sys
 import math
+import time
 
 satra_path = sys.path.append('/u/sbayrak/devel/mapalign/mapalign')
 import embed
@@ -74,10 +75,14 @@ def load_random_subject(n,m):
     return np.random.randn(n, m)
 
 def correlation_matrix(subject):
+    set_time()
     K = load_nii_subject(subject)
     #K = load_random_subject(NN,4800)
     # K : matrix of similarities / Kernel matrix / Gram matrix
+    print_time("load:")
+    print "input data shape:", K.shape
     K = np.corrcoef(K)
+    print_time("corrcoef:")
     return K
 
 def fisher_r2z(R):
@@ -127,6 +132,18 @@ def upper_to_mat(A):
         k += len
     return M
 
+last_time = 0
+
+def set_time():
+    global last_time
+    last_time = time.time()
+
+def print_time(s):
+    global last_time
+    now = time.time()
+    print "time", s, (now - last_time)
+    last_time = now
+
 # here we go ...
 
 subject_list = np.array(sys.argv)[1:] # e.g. /ptmp/sbayrak/hcp/100307
@@ -134,33 +151,42 @@ N = len(subject_list)
 
 for i in range(0, N):
     subject = subject_list[i]
-    print i, "do corr"
+    print "do loop %d/%d, %s" % (i+1, N, subject)
     # this always returns dtype=np.float64, consider adding .astype(np.float32)
     K = correlation_matrix(subject)
-    # for the next calculations we only use the upper triangular matrix
-    K = mat_to_upper(K)
 
-    print i, "do r2z"
+    # for the next calculations we only use the upper triangular matrix
+    set_time()
+    K = mat_to_upper(K)
+    print_time("mat_to_upper:")
+
     K = fisher_r2z(K)
-    print i, "do sum"
+    print_time("fisher_r2z:")
     if i == 0:
         SUM = K.copy()
     else:
         SUM += K
+    print_time("sum:")
     del K
 
-print "loop done, do fisher_z2r"
-SUM /= float(N)
-SUM = fisher_z2r(SUM)
-SUM = upper_to_mat(SUM)
+print "loop done"
+print
 
-print "do embed"
-print "correlation matrix:", SUM.shape
+SUM /= float(N)
+print_time("final division:")
+SUM = fisher_z2r(SUM)
+print_time("final fisher_z2r:")
+SUM = upper_to_mat(SUM)
+print_time("final upper_to_mat:")
+
+print "do embed for correlation matrix:", SUM.shape
 embedding, result = embed.compute_diffusion_map(SUM, alpha=0, n_components=20,
     diffusion_time=0, skip_checks=True, overwrite=True)
+print_time("final embedding:")
 
 #save_output(subject, embedding)
 np.savetxt("out_test", embedding, fmt='%5.5e', delimiter='\t', newline='\n')
+print_time("final save:")
 
 print result['lambdas']
 
