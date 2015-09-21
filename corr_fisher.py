@@ -76,9 +76,29 @@ def load_nii_subject(subject, dtype=None):
 def load_random_subject(n,m):
     return np.random.randn(n, m)
 
+def my_cov(m):
+
+    # Handles complex arrays too
+    m = np.asarray(m)
+    dtype = np.result_type(m, np.float64)
+    X = np.array(m, ndmin=2, dtype=dtype)
+    print "X", X.shape
+    N = X.shape[1]
+
+    fact = float(N - 1)
+    if fact <= 0:
+        warnings.warn("Degrees of freedom <= 0 for slice", RuntimeWarning)
+        fact = 0.0
+
+    X -= X.mean(axis=1, keepdims=True)
+    print_time("mean:")
+    return (np.dot(X, X.T.conj()) / fact).squeeze()
+
 # This is corrcoef from numpy 1.9.2 ... mem usage optimized
-def corrcoef_upper(x, y=None, rowvar=1, bias=0, ddof=None):
-    c = np.cov(x, y, rowvar, bias, ddof)
+def corrcoef_upper(x):
+    c = my_cov(x)
+    print_time("my_cov:")
+    print "c", c.shape, c.dtype
     d = np.diag(c)
     c = mat_to_upper(c)
     d = np.sqrt(d)
