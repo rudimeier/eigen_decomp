@@ -142,10 +142,11 @@ for i in range(0, N):
 
     print i, "do r2z"
     K = fisher_r2z(K)
-    if i == 0:
-        SUM = np.zeros(K.shape,K.dtype)
     print i, "do sum"
-    SUM = SUM + K
+    if i == 0:
+        SUM = K.copy()
+    else:
+        SUM += K
     del K
 
 print "loop done, do fisher_z2r"
