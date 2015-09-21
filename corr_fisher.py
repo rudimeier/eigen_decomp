@@ -116,7 +116,7 @@ def mat_to_upper(A):
     return U
 
 def upper_to_mat(A):
-    n = NN
+    n = int(round( 0.5 + np.sqrt(0.25 + 2 * A.shape[0]) ))
     M = np.zeros(shape=[n,n], dtype=A.dtype)
     k = 0
     for i in range(0,n):
