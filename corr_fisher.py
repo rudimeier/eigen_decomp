@@ -26,14 +26,15 @@ print "numpy version: ", np.__version__
 
 def load_nii_subject(subject, dtype=None):
     template = 'rfMRI_REST?_??_Atlas_hp2000_clean.dtseries.nii'
+    cnt_files = 4
     files = [val for val in sorted(glob(os.path.join(subject, template)))]
-    files = files[:4]
+    files = files[:cnt_files]
 
     # read in data and create correlation matrix:
     # for left hemisphere; 'range(0,nsamples)' for all ??
     # data_range = range(0,32492) ??
 
-    for x in xrange(0, 4):
+    for x in xrange(0, cnt_files):
 
         img = nb.load(files[x])
         # ntimepoints, nsamples = img.data.shape
@@ -63,7 +64,7 @@ def load_nii_subject(subject, dtype=None):
             m_single = single_t_series.shape[1]
             # By default we are using the same dtype like input file (float32).
             init_dtype = single_t_series.dtype if dtype == None else dtype
-            K = np.ndarray(shape=[n,4*m_single], dtype=init_dtype, order='F')
+            K = np.ndarray(shape=[n,cnt_files*m_single], dtype=init_dtype, order='F')
 
         K[:, x*m_single:(x+1)*m_single] = (
             (single_t_series - mean_series) / std_series)
