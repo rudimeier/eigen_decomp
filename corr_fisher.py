@@ -99,11 +99,17 @@ def corrcoef_upper(x):
     c = my_cov(x)
     print_time("my_cov:")
     print "c", c.shape, c.dtype
-    d = np.diag(c)
-    c = mat_to_upper(c)
+    d = np.diag(c).copy()
+    print "c", d.shape, d.dtype
+    size = mat_to_upper(c)
+    c.resize([size,])
+    print_time ("mat_to_upper c:")
     d = np.sqrt(d)
     d = np.multiply.outer(d, d)
-    d = mat_to_upper(d)
+    print_time ("outer d:")
+    size = mat_to_upper(d)
+    d.resize([size,])
+    print_time ("mat_to_upper d:")
     return ne.evaluate('c / d')
 
 def correlation_matrix(subject):
@@ -142,26 +148,31 @@ def old_fisher_z2r(Z):
     return R
 
 def mat_to_upper(A):
+    if not A.flags['C_CONTIGUOUS']:
+        raise Exception("C_CONTIGUOUS required")
     n = A.shape[0]
     size = (n - 1) * n / 2
-    U = np.ndarray(shape=[size,], dtype=A.dtype)
+    U = A.reshape([n*n,])
     k = 0
     for i in range(0, n-1):
         len = n - 1 - i
         U[k:k+len] = A[i,i+1:n]
         k += len
-    return U
+    return size
 
-def upper_to_mat(A):
-    n = int(round( 0.5 + np.sqrt(0.25 + 2 * A.shape[0]) ))
-    M = np.zeros(shape=[n,n], dtype=A.dtype)
-    k = 0
-    for i in range(0,n):
+def upper_to_mat(M):
+    if not M.flags['C_CONTIGUOUS']:
+        raise Exception("C_CONTIGUOUS required")
+    n = M.shape[0]
+    size = (n - 1) * n / 2
+    U = M.reshape([n*n,])
+    k = size
+    for i in range(n-1, -1, -1):
         len = n - 1 - i
-        M[i,i+1:n] = A[k:k+len]
+        M[i+1:n,i] = U[k-len:k]
+        M[i,i+1:n] = U[k-len:k]
         M[i,i] = 1.0
-        M[i,0:i] = M[0:i,i]
-        k += len
+        k -= len
     return M
 
 last_time = 0
@@ -205,6 +216,7 @@ SUM = ne.evaluate('SUM / N')
 print_time("final division:")
 SUM = fisher_z2r(SUM)
 print_time("final fisher_z2r:")
+SUM.resize([NN,NN])
 SUM = upper_to_mat(SUM)
 print_time("final upper_to_mat:")
 
