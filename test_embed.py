@@ -44,6 +44,7 @@ def correlation_matrix(subject):
         # for only left hemisphere: brainModels[1]
 
         header = img.header.matrix.mims[1].brainModels[2].indexOffset
+        header = 1448
         single_t_series = img.data[:, :header].T
 
         mean_series = single_t_series.mean(axis=0)
@@ -74,11 +75,12 @@ def save_output(subject, embed_matrix):
 L = correlation_matrix(infile)
 
 print "correlation matrix:", L.shape
-
+np.savetxt("X", L, fmt='%5.5e', delimiter='\t', newline='\n')
 embedding, result = embed.compute_diffusion_map(L, alpha=0, n_components=20,
     diffusion_time=0, skip_checks=True, overwrite=True)
 
-save_output(subject, embedding)
+#save_output(subject, embedding)
+np.savetxt("out_testX", embedding, fmt='%5.5e', delimiter='\t', newline='\n')
 
 print result['lambdas']
 

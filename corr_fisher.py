@@ -16,7 +16,7 @@ import embed
 
 # global n, dimension of corr matrix , will be set when reading files ...
 NN = 0
-#NN = 11448 # fake this for testing: 8095...0.5 GB, 11448...1 GB, 16190...2 GB
+NN = 1448 # fake this for testing: 8095...0.5 GB, 11448...1 GB, 16190...2 GB
 
 
 print "python version: ", sys.version[0:5]
@@ -111,7 +111,7 @@ def corrcoef_upper(x):
     size = mat_to_upper(d)
     d.resize([size,])
     print_time ("mat_to_upper d:")
-    return ne.evaluate('c / d')
+    return ne.evaluate('((c / d) +1) / 2.0')
 
 def correlation_matrix(subject):
     set_time()
